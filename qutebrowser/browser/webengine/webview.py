@@ -22,6 +22,7 @@
 from PyQt5.QtCore import pyqtSignal, QUrl, PYQT_VERSION
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 from qutebrowser.browser import shared
@@ -30,6 +31,12 @@ from qutebrowser.config import config
 from qutebrowser.utils import log, debug, usertypes, objreg, qtutils
 from qutebrowser.misc import miscwidgets
 from qutebrowser.qt import sip
+
+
+class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
+    def interceptRequest(self, info):
+        log.webview.info("Request URL: %s" % info.requestUrl())
+        log.webview.info("Request Method: %s" % info.requestMethod())
 
 
 class WebEngineView(QWebEngineView):
@@ -47,6 +54,10 @@ class WebEngineView(QWebEngineView):
             assert profile.isOffTheRecord()
         else:
             profile = webenginesettings.default_profile
+
+        self._interceptor = WebEngineUrlRequestInterceptor()
+        profile.setRequestInterceptor(self._interceptor)
+
         page = WebEnginePage(theme_color=theme_color, profile=profile,
                              parent=self)
         self.setPage(page)
